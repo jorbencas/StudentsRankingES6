@@ -1,7 +1,8 @@
 var fs = require('fs');
 var browserify = require('browserify');
 var gulp = require('gulp');
-var webserver = require('gulp-webserver');
+//var webserver = require('gulp-webserver');
+var nodemon = require('gulp-nodemon');
 var $ = require('gulp-load-plugins')({ lazy: true });
 var jsdoc = require('gulp-jsdoc3');
 //var jshint = require('gulp-jshint');
@@ -17,7 +18,7 @@ if (!fs.existsSync('dist')){
 gulp.task('vet', function() {
   //log('Analyzing source with JSHint and JSCS');
   return gulp
-    .src('./src/*')
+    .src('./src/client/*')
     //.pipe($.if(args.verbose, $.print()))
     .pipe($.jshint())
     .pipe($.jshint.reporter('jshint-stylish', { verbose: true }))
@@ -39,24 +40,31 @@ gulp.task('doc', function (cb) {
 
 ///babelify, es6 to es5
 gulp.task('browserify', function() {
-  browserify('./src/main.js')
-  .transform('babelify', {presets: ['es2015']})
+  browserify('./src/client/main.js')
+  .transform('babelify', {presets: ['env']})
   .bundle()
   .pipe(fs.createWriteStream('dist/main.js'));
 });
 
-///http server live reload (html changes)
-gulp.task('webserver', function() {
-  gulp.src('./')
-  .pipe(webserver({
-    livereload: true,
-    directoryListing: false,
-    open: true
-  }));
-});
+gulp.task('webserver', function () {
+  var stream = nodemon({
+    script: 'src/server/app.js',
+    ext: 'js html css',
+    env: { 'NODE_ENV': 'development' }
+  })
+  stream
+    .on('restart',function() {
+      console.log('restarted');
+    })
+    
+    .on('crash',function() {
+      console.error('App has crashed!\n');
+      stream.emit('restart',10); //restart the server in 10 seconds
+    })
+})
 
 // watch any change
 gulp.task('watch', ['browserify'], function () {
-  gulp.watch('./src/**/*.js', ['browserify']);
+  gulp.watch('./src/client/**/*.js', ['browserify']);
 });
 gulp.task('default', ['browserify', 'webserver', 'watch']);
