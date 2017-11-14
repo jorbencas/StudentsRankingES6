@@ -80,7 +80,7 @@ class GradedTask extends Task {
     context.gradedTasks.forEach(function(valueGT,keyGT,gradedTasks_) {
       marks += valueGT[STUDENT_MARKS].get(idStudent) * valueGT.weight  / 100;
      });
-    return marks;
+    return Math.round(marks);
   }
 
 
