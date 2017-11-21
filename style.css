@@ -97,8 +97,10 @@ body {
 	text-align: center;
 } 
 #more_gt{
+  max-width: 5%;
+  font-size: 14px;
   background-color: #50fa01;
-  color: #fff;
+  color: #000000;
 }
 #us, #ds, #xp, #more_gt {
 	color: white;
