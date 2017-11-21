@@ -714,13 +714,13 @@ var _utils = require('./utils.js');
 function generateMenu() {
   var output = '';
   if (_context.context.user.displayName) {
-    output += '<li class="nav-item"><a class="nav-link" href="">Welcome ' + _context.context.user.displayName + '</a></li>';
+    output += '<li><a href="">Welcome ' + _context.context.user.displayName + '</a></li>';
   }
-  output += '<li class="nav-item"><a class="nav-link" href="#settings"><button class="btn btn-secondary"> Settings</button></a></li>';
-  output += '<li class="nav-item"><a class="nav-link" href="#addStudent"><button class="btn btn-secondary"> + Student</button></a></li>';
-  output += '<li class="nav-item"><a class="nav-link" href="#addGradedTask"><button class="btn btn-secondary"> + Graded task</button></a></li>';
+  output += '<li><a href="#settings"> Settings</a></li>';
+  output += '<li><a href="#addStudent"> + Student</a></li>';
+  output += '<li><a href="#addGradedTask"> + Graded task</a></li>';
   if (_context.context.user.displayName) {
-    output += '<li class="nav-item"><a class="nav-link" href="#logout"><button class="btn btn-danger"> LOGOUT</button></a></li>';
+    output += '<li><a  href="#logout"><button id="logut"><strong>LOGOUT</strong></button></a></li>';
   }
   document.getElementById('menuButtons').innerHTML = output;
 }

@@ -15,9 +15,12 @@
         <a href='#student/${person[1].getId()}'>${person[1].surname}, ${person[1].name}</a>
     </td>
     <td>
-        <a href='#editStudent/${person[1].getId()}'><button class='btnS btn btn-success'>
-        <i class='fa fa-pencil fa-1x'></i></button></a><a href='#deleteStudent/${person[1].getId()}'>
-        <button class='btnS btn btn-danger'><i class='fa fa-trash-o fa-1x'></i></button></a>
+        <a href='#editStudent/${person[1].getId()}'><button id="us">
+        <img src="https://image.flaticon.com/icons/png/512/61/61456.png" width="15" height="15"></img></button>
+        </a>
+        
+        <a href='#deleteStudent/${person[1].getId()}'>
+        <button id="ds"><img src="https://cdn2.iconfinder.com/data/icons/designers-and-developers-icon-set/32/recyclebin-512.png" width="15" height="15"></img></button></a>
     </td>
     
     <td>
@@ -28,7 +31,7 @@
     </td>
     <td><strong>${person[1].finalGrade()}</strong></td>
     <td>
-        <a href='#addXP/${person[1].getId()}'><button class="btnS btn btn-primary">+XP</button></a>
+        <a href='#addXP/${person[1].getId()}'><button id="xp">+XP</button></a>
     </td>
     
      <td ng-repeat='GT in person[1].getStudentMarks()'>
