@@ -140,7 +140,7 @@ class Person {
     console.log('Student: '+ this.name + ' ' + this.surname);
    console.log(points);
     console.log('Final Marks'+ (points *10) / 10 );
-    console.log('---------------------------------------------------------------------------')
+    console.log('---------------------------------------------------------------------------');
     return Math.round((points *10) / 10);
   }
 }

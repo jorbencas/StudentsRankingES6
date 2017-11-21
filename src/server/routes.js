@@ -123,7 +123,7 @@ function getGradedTasks(req, res, next) {
 
 router.post('/uploadAvatar', function (req, res) {
   if (!fs.existsSync('src/server/data/imagenes')){
-     fs.mkdirSync('src/server/data/imag');
+     fs.mkdirSync('src/server/data/imagenes');
    }
    var dataString = req.body[1].split(' ').join('+');
    var name = req.body[0];

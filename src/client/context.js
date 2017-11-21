@@ -220,7 +220,7 @@ class Context {
       var slider = document.getElementById("myRange");
       var output = document.getElementById("demo");
       var outputg = document.getElementById("DEMO");
-      slider.value = localStorage.getItem('atituepoints');
+      slider.value = localStorage.getItem('Actitdepoints');
       output.innerHTML = slider.value;
       outputg.innerHTML = 100 - parseInt(slider.value);
       slider.oninput = function() {
