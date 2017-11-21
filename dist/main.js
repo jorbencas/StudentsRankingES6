@@ -202,7 +202,7 @@ var Context = function () {
           var arrayGradedTasks = [].concat(_toConsumableArray(this.gradedTasks.entries())).reverse();
           for (var i = 0; i < this.showNumGradedTasks; i++) {
             if (i === this.showNumGradedTasks - 1) {
-              TPL_GRADED_TASKS += '<th><a href="#detailGradedTask/' + arrayGradedTasks[i][0] + '">' + arrayGradedTasks[i][1].name + '(' + arrayGradedTasks[i][1].weight + '%)&nbsp;</a><a href="#MoreGradedTasks"><button id="more_gt"><i class="fa fa-hand-o-right fa-1x"></i></button></a></th>';
+              TPL_GRADED_TASKS += '<th><a href="#detailGradedTask/' + arrayGradedTasks[i][0] + '">' + arrayGradedTasks[i][1].name + '(' + arrayGradedTasks[i][1].weight + '%)&nbsp;</a><a href="#MoreGradedTasks"><button id="more_gt"><h4>+</h4></button></a></th>';
             } else {
               TPL_GRADED_TASKS += '<th><a href="#detailGradedTask/' + arrayGradedTasks[i][0] + '">' + arrayGradedTasks[i][1].name + '(' + arrayGradedTasks[i][1].weight + '%)</a></th>';
             }
@@ -874,7 +874,6 @@ var Person = function () {
           };
           fileReader.readAsDataURL(fileavatar[0]);
         };
-
         saveStudent.addEventListener('submit', function () {
           var oldId = _this.getId();
           _this.name = document.getElementById('idFirstName').value;
@@ -903,16 +902,11 @@ var Person = function () {
         _context.context.gradedTasks.forEach(function (gtItem) {
           TPL_GRADED_TASKS += '<li class="list-group-item">' + gtItem.getStudentMark(TPL_STUDENT.getId()) + '->' + gtItem.name + '->' + (0, _utils.formatDate)(new Date(gtItem.datetime)) + '</li>';
         });
-
         var out = (0, _templator.template)(responseText, scope);
         console.log(out);
         document.getElementById('content').innerHTML = eval('`' + out + '`');
       }.bind(this));
     }
-    // getfinalMark(){
-    //   return document.getElementById('').value;
-    // }
-
   }, {
     key: 'finalGrade',
     value: function finalGrade() {

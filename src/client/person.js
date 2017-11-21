@@ -88,8 +88,6 @@ class Person {
         };
         fileReader.readAsDataURL(fileavatar[0]);
       };
-
-
       saveStudent.addEventListener('submit', () => {
         let oldId = this.getId();
         this.name = document.getElementById('idFirstName').value;
@@ -116,15 +114,11 @@ class Person {
           TPL_GRADED_TASKS += '<li class="list-group-item">' + gtItem.getStudentMark(TPL_STUDENT.getId()) + '->' +
                         gtItem.name + '->' + formatDate(new Date(gtItem.datetime)) + '</li>';
         });
-        
         let out = template(responseText,scope);
         console.log(out);
         document.getElementById('content').innerHTML = eval('`' + out + '`');
       }.bind(this));
   }
-  // getfinalMark(){
-  //   return document.getElementById('').value;
-  // }
 
   finalGrade(){
     let answer=((parseInt(this.getTotalPoints()) * localStorage.getItem('Actitdepoints')) / parseInt(context.getfirststudent().getTotalPoints()));
