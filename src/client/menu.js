@@ -7,6 +7,7 @@ function generateMenu() {
   if (context.user.displayName) {
     output += '<li class="nav-item"><a class="nav-link" href="">Welcome ' + context.user.displayName + '</a></li>';
   }
+  output += '<li class="nav-item"><a class="nav-link" href="#settings"><button class="btn btn-secondary"> Settings</button></a></li>';  
   output += '<li class="nav-item"><a class="nav-link" href="#addStudent"><button class="btn btn-secondary"> + Student</button></a></li>';
   output += '<li class="nav-item"><a class="nav-link" href="#addGradedTask"><button class="btn btn-secondary"> + Graded task</button></a></li>';
   if (context.user.displayName) {
@@ -18,6 +19,7 @@ function generateMenu() {
 function logout() {
   context.user = '';
   deleteCookie('user');
+  deleteCookie('connect.sid');
   loadTemplate('api/logout',function(response) {
                 context.login();
               },'GET','',false);

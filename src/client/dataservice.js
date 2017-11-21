@@ -4,19 +4,39 @@ import Person from './person.js';
 import GradedTask from './gradedtask.js';
 
 function updateFromServer() {
-
-  loadTemplate('api/getStudents',function(response) {
-                          localStorage.setItem('students',response);
-                          loadStudentsToLocalStorage();
+  if (context.user.id) {
+    loadTemplate('api/getStudents',function(response) {
+                            localStorage.setItem('students',response);
+                            loadStudentsToLocalStorage();
+                            context.getTemplateRanking();
+                          },'GET','',false);
+    loadTemplate('api/getGradedTasks',function(response) {
+                          localStorage.setItem('gradedTasks',response);
+                          loadGradedTasksToLocalStorage();
+                          context.getTemplateRanking();
                         },'GET','',false);
-  /*loadTemplate('api/getGradedTasks',function(response) {
-                        localStorage.setItem('gradedTasks',response);
-                        loadGradedTasksToLocalStorage();
-                      },'GET','',false);
-  loadGradedTasksToLocalStorage();*/
-
+  }
 }
 
+function saveStudents(arrayStudents) {
+  localStorage.setItem('students',arrayStudents);
+  loadTemplate('api/saveStudents',function(response) {
+                          console.log('SAVE STUDENTS ' + response);
+                        },'POST',localStorage.getItem('students'),false);
+}
+
+function uploadAvatar(avatar) {
+  loadTemplate('api/uploadAvatar',function(response) {
+                          console.log('SAVE AVATAR ' + response);
+                        },'POST',avatar,false);
+}
+
+function saveGradedTasks(arrayGT) {
+  localStorage.setItem('gradedTasks',arrayGT);
+  loadTemplate('api/saveGradedTasks',function(response) {
+                          console.log('SAVE GRADED TASKS ' + response);
+                        },'POST',localStorage.getItem('gradedTasks'),false);
+}
 function loadStudentsToLocalStorage() {
   if (localStorage.getItem('students')) {
     let students_ = new Map(JSON.parse(localStorage.getItem('students')));
@@ -39,4 +59,4 @@ function loadGradedTasksToLocalStorage() {
   }
 }
 
-export {updateFromServer};
+export {updateFromServer,saveStudents,saveGradedTasks, uploadAvatar};

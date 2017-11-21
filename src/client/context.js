@@ -9,9 +9,10 @@
 
 import Person from './person.js';
 import GradedTask from './gradedtask.js';
-import {updateFromServer} from './dataservice.js';
+import {updateFromServer,saveStudents,saveGradedTasks, uploadAvatar} from './dataservice.js';
 import {hashcode,loadTemplate,setCookie,getCookie} from './utils.js';
 import {generateMenu} from './menu.js';
+import {template} from './templator.js';
 
 class Context {
 
@@ -22,32 +23,26 @@ class Context {
     if (getCookie('user')) {
       this.user = JSON.parse(getCookie('user'));
     }
-    updateFromServer();
-    /* if (localStorage.getItem('students')) {
-      let students_ = new Map(JSON.parse(localStorage.getItem('students')));
-      students_.forEach(function(value_,key_,students_) {
-        students_.set(key_,new Person(value_.name,value_.surname,
-          value_.attitudeTasks,value_.id));
-      });
-      this.students = students_;
-    }*/
-    if (localStorage.getItem('gradedTasks')) {
-      let gradedTasks_ = new Map(JSON.parse(localStorage.getItem('gradedTasks')));
-      gradedTasks_.forEach(function(value_,key_,gradedTasks_) {
-        gradedTasks_.set(key_,new GradedTask(value_.name,value_.description,value_.weight,
-          value_.studentsMark,value_.id));
-      });
-      this.gradedTasks = gradedTasks_;
-    } 
   }
+
   /** Check if user is logged */
   isLogged() {
-    if (this.user) {
-      return true;
-    }else {
-      return false;
-    }
+    loadTemplate('api/loggedin',function(response) {
+      if (response === '0') {
+        //alert('LOGGED IN 0');
+        this.user = undefined;
+        this.login();
+        return false;
+      }else {
+        //alert('LOGGED IN TRUE');
+        this.user = JSON.parse(response);
+        updateFromServer();
+        this.getTemplateRanking();
+        return true;
+      }
+    }.bind(this),'GET','',false);
   }
+
   /** Show login form template when not authenticated */
   login() {
     let that = this;
@@ -64,9 +59,8 @@ class Context {
           loadTemplate('api/login',function(userData) {
             that.user = JSON.parse(userData);
             setCookie('user',userData,7);
-            generateMenu();
+            updateFromServer();
             that.getTemplateRanking();
-            that.showMenu();
           },'POST','username=' + username + '&password=' + password,false);
           return false; //Avoid form submit
         });
@@ -95,25 +89,26 @@ class Context {
   }
   /** Draw Students ranking table in descendent order using total points as a criteria */
   getTemplateRanking() {
+    generateMenu();
+    this.showMenu();
 
     if (this.students && this.students.size > 0) {
+      //alert('SI STUDENTS');
       /* We sort students descending from max number of points to min */
       let arrayFromMap = [...this.students.entries()];
       arrayFromMap.sort(function(a,b) {
-        return (b[1].getTotalPoints() - a[1].getTotalPoints());
+        return (b[1].finalGrade() - a[1].finalGrade());
       });
       this.students = new Map(arrayFromMap);
 
-      localStorage.setItem('students',JSON.stringify([...this.students])); //Use of spread operator to convert a Map to an array of pairs
+      saveStudents(JSON.stringify([...this.students]));
       let TPL_GRADED_TASKS = '';
-      /* Maximum visible graded tasks could not be greater than actually existing graded tasks */
-      if (this.showNumGradedTasks >= this.gradedTasks.length) {
-        this.showNumGradedTasks = this.gradedTasks.length;
-      }
 
       if (this.gradedTasks && this.gradedTasks.size > 0) {
+        if (this.showNumGradedTasks >= this.gradedTasks.size) {
+          this.showNumGradedTasks = this.gradedTasks.size;
+        }
         let arrayGradedTasks = [...this.gradedTasks.entries()].reverse();
-        //TPL_GRADED_TASKS = arrayGradedTasks.slice(this.showNumGradedTasks);
         for (let i = 0;i < this.showNumGradedTasks;i++) {
           if (i === (this.showNumGradedTasks - 1)) {
             TPL_GRADED_TASKS += '<th><a href="#detailGradedTask/' + arrayGradedTasks[i][0] + '">' +
@@ -123,36 +118,31 @@ class Context {
           }
         }
       }
+      let scope = {};
+      scope.TPL_GRADED_TASKS = TPL_GRADED_TASKS;
+      scope.TPL_PERSONS = arrayFromMap;
 
       loadTemplate('templates/rankingList.html',function(responseText) {
-              document.getElementById('content').innerHTML = eval('`' + responseText + '`');
-              let tableBody = document.getElementById('idTableRankingBody');
+              let out = template(responseText,scope);
+              //console.log(out);
+              document.getElementById('content').innerHTML = eval('`' + out + '`');
               let that = this;
               let callback = function() {
                   let gtInputs = document.getElementsByClassName('gradedTaskInput');
                   Array.prototype.forEach.call(gtInputs,function(gtInputItem) {
                         gtInputItem.addEventListener('change', () => {
-                          let idPerson = gtInputItem.getAttribute('idPerson');
-                          let pers = parseInt(idPerson);
+                          let idPerson = gtInputItem.getAttribute('idStudent');
                           let idGradedTask = gtInputItem.getAttribute('idGradedTask');
                           let gt = that.gradedTasks.get(parseInt(idGradedTask));
                           gt.addStudentMark(idPerson,gtInputItem.value);
-                         // let XP_GRADETASKS = GradedTask.calculatexpgradetask(pers);
-                          context.getTemplateRanking();
+                          that.getTemplateRanking();
                         });
                       });
                 };
-              let itemsProcessed = 0;
-              this.students.forEach(function(studentItem,key,map) {
-                studentItem.getHTMLView(tableBody);
-                itemsProcessed++;
-                if (itemsProcessed === map.size) {
-                  setTimeout(callback,300); //FAULTY 
-                }
-              });
+              callback();
             }.bind(this));
     }else {
-      localStorage.setItem('students',[]);
+      //alert('NO STUDENTS');
       document.getElementById('content').innerHTML ='';
     }
   }
@@ -163,10 +153,10 @@ class Context {
     let callback = function(responseText) {
             document.getElementById('content').innerHTML = responseText;
             let saveGradedTask = document.getElementById('newGradedTask');
-
-            let POINTSTASK = parseInt(100 - GradedTask.totalweight());
-            document.getElementById('tp').innerHTML = 'Task Weight (0-'+POINTSTASK+' %):';
-              document.getElementById('idTaskWeight').setAttribute('max',POINTSTASK);
+            let totalGTweight = GradedTask.getGradedTasksTotalWeight();
+            document.getElementById('labelWeight').innerHTML = 'Task Weight (0-' + (100 - totalGTweight) + '%)';
+            let weightIput = document.getElementById('idTaskWeight');
+            weightIput.setAttribute('max', 100 - totalGTweight);
 
             saveGradedTask.addEventListener('submit', () => {
               let name = document.getElementById('idTaskName').value;
@@ -178,7 +168,7 @@ class Context {
                 gtask.addStudentMark(studentKey,0);
               });
               this.gradedTasks.set(gtaskId,gtask);
-              localStorage.setItem('gradedTasks',JSON.stringify([...this.gradedTasks])); //Use of spread operator to convert a Map to an array of pairs
+              saveGradedTasks(JSON.stringify([...this.gradedTasks]));
               this.getTemplateRanking();
               return false; //Avoid form submit
             });
@@ -192,8 +182,20 @@ class Context {
     let callback = function(responseText) {
             document.getElementById('content').innerHTML = responseText;
             let saveStudent = document.getElementById('newStudent');
+            let avatar = document.getElementById('upload');
+            //uploadAvatar(window.btoa(avatar));
+            let codeavatar = "";
+            avatar.onchange = function (avatar){
+              var fileavatar = avatar.target.files;
+              let fileReader = new FileReader();
+              fileReader.onload = function(evt){
+              codeavatar = evt.target.result;
+              };
+              fileReader.readAsDataURL(fileavatar[0]);
+            };
 
-            saveStudent.addEventListener('submit', () => {
+            saveStudent.addEventListener('submit', (event) => {
+              event.preventDefault();
               let name = document.getElementById('idFirstName').value;
               let surnames = document.getElementById('idSurnames').value;
               let student = new Person(name,surnames,[]);
@@ -201,12 +203,51 @@ class Context {
                     iGradedTask.addStudentMark(student.getId(),0);
                   });
               this.students.set(student.getId(),student);
+
+              var iDavatar = JSON.stringify([student.getId(), codeavatar]);
+              uploadAvatar(iDavatar);
+
               this.getTemplateRanking();
               return false; //Avoid form submit
             });
           }.bind(this);
 
     loadTemplate('templates/addStudent.html',callback);
+  }
+  settings(){
+    let callback = function(responseText){
+      document.getElementById('content').innerHTML = responseText;
+      var slider = document.getElementById("myRange");
+      var output = document.getElementById("demo");
+      var outputg = document.getElementById("DEMO");
+      slider.value = localStorage.getItem('atituepoints');
+      output.innerHTML = slider.value;
+      outputg.innerHTML = 100 - parseInt(slider.value);
+      slider.oninput = function() {
+        output.innerHTML = this.value;
+        outputg.innerHTML = 100 - parseInt(this.value);
+      };
+
+      let saveSettings = document.getElementById("Settings");
+        saveSettings.addEventListener('submit', () => {
+          var output = document.getElementById("demo").innerText;
+          //var outputg = document.getElementById("DEMO").innerText;
+          console.log('ActtitudTasks'+ output);
+          localStorage.setItem('Actitdepoints',output);
+          context.getTemplateRanking();
+        });
+    };
+     
+    loadTemplate('templates/settings.html',callback);
+   
+  }
+
+  getfirststudent(){
+    let arrayFromMap = [...this.students.entries()];
+    arrayFromMap.sort(function(a,b) {
+      return (b[1].getTotalPoints() - a[1].getTotalPoints());
+    });
+    return arrayFromMap[0][1];
   }
   /** Add last action performed to lower information layer in main app */
   notify(text) {
