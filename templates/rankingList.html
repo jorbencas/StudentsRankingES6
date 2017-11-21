@@ -9,7 +9,7 @@
     <!-- FILLED WITH REPEATED lineStudent template, once for student -->
     <tr ng-repeat="person in TPL_PERSONS">
     <td>
-        <img src="/src/server/data/imagenes/${person[1].getId()}.jpg" width="25%" height="25%"></img>
+        <img src="/src/server/data/imagenes/${person[1].getId()}.jpg" width="25%" height="25%" alt="Student"></img>
     </td>
     <td>
         <a href='#student/${person[1].getId()}'>${person[1].surname}, ${person[1].name}</a>
