@@ -142,7 +142,9 @@ class Person {
     loadTemplate('templates/detailStudent.html',function(responseText) {
         let TPL_STUDENT = this;
         let scope = {};
-        scope.TPL_ATTITUDE_TASKS = this.attitudeTasks.reverse();
+        let arrayAT = [];
+        let XParrayFromMap = [...context.atitudetask.entries()];
+          scope.XP_POINTS = XParrayFromMap;
         let TPL_GRADED_TASKS = '';
         context.gradedTasks.forEach(function(gtItem) {
           TPL_GRADED_TASKS += '<li class="list-group-item">' + gtItem.getStudentMark(TPL_STUDENT.getId()) + '->' +
