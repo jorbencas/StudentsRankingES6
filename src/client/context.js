@@ -1,4 +1,4 @@
-/**
+  /**
  * Context class. Devised to control every element involved in the app: students, gradedTasks ...
  *
  * @constructor
@@ -7,30 +7,40 @@
 
 /*jshint -W061 */
 
-import Person from './person.js';
-import GradedTask from './gradedtask.js';
-import {updateFromServer,saveStudents,saveGradedTasks, uploadAvatar} from './dataservice.js';
-import {hashcode,loadTemplate,setCookie,getCookie} from './utils.js';
-import {generateMenu} from './menu.js';
-import {template} from './templator.js';
+import Person from './classes/person.js';
+import GradedTask from './classes/gradedtask.js';
+import {updateFromServer,saveStudents,saveGradedTasks} from './dataservice.js';
+import {hashcode,loadTemplate,setCookie,deleteCookie,getCookie} from './lib/utils.js';
+import {generateMenu,showMenu,hideMenu} from './menu.js';
+import {template} from './lib/templator.js';
 
 class Context {
 
   constructor() {
     this.students = new Map();
     this.gradedTasks = new Map();
-    this.showNumGradedTasks = 1;//Max visible graded tasks in ranking list table
+    this.atitudetask = new Map();
+    //this.showNumGradedTasks = 1;//Max visible graded tasks in ranking list table
+    this.weightXP = parseInt(getCookie('weightXP')) || 25;
+    this.weightGP = parseInt(getCookie('weightGP')) || 75;
     if (getCookie('user')) {
       this.user = JSON.parse(getCookie('user'));
     }
   }
-
+  /** Clear context  */
+  clear() {
+    this.students = new Map();
+    this.gradedTasks = new Map();
+    //this.atitudetask = new Map();
+    //this.showNumGradedTasks = 1;
+    this.user = undefined;
+  }
   /** Check if user is logged */
   isLogged() {
     loadTemplate('api/loggedin',function(response) {
       if (response === '0') {
         //alert('LOGGED IN 0');
-        this.user = undefined;
+        this.clear();
         this.login();
         return false;
       }else {
@@ -42,20 +52,22 @@ class Context {
       }
     }.bind(this),'GET','',false);
   }
-
   /** Show login form template when not authenticated */
   login() {
     let that = this;
     if (!this.user) {
+      this.clear();
       loadTemplate('templates/login.html',function(responseText) {
-        that.hideMenu();
-        document.getElementById('content').innerHTML = eval('`' + responseText + '`');
-        let loginForm = document.getElementById('loginForm');
+        hideMenu();
+        $('#content').html(eval('`' + responseText + '`'));
+        $('#loginAlert').hide();
+        let loginForm = $('#loginForm');
 
-        loginForm.addEventListener('submit', (event) => {
+        loginForm.submit(function(event) {
           event.preventDefault();
-          let username = document.getElementsByName('username')[0].value;
-          let password = document.getElementsByName('password')[0].value;
+          deleteCookie('connect.sid');
+          let username = $('input[name=username]').val();
+          let password = $('input[name=password]').val();
           loadTemplate('api/login',function(userData) {
             that.user = JSON.parse(userData);
             setCookie('user',userData,7);
@@ -70,15 +82,6 @@ class Context {
       that.getTemplateRanking();
     }
   }
-
-  showMenu() {
-    document.getElementById('navbarNav').style.visibility = 'visible';
-  }
-
-  hideMenu() {
-    document.getElementById('navbarNav').style.visibility = 'hidden';
-  }
-
   /** Get a Person instance by its ID */
   getPersonById(idHash) {
     return this.students.get(parseInt(idHash));
@@ -87,172 +90,106 @@ class Context {
   getGradedTaskById(idHash) {
     return this.gradedTasks.get(parseInt(idHash));
   }
+
+  getAtitudeTaskById(idAtitud){
+    if ([...this.atitudetask].length === 0){
+      updateFromServer();
+}
+    return this.atitudetask.get(parseInt(idAtitud));
+  }
   /** Draw Students ranking table in descendent order using total points as a criteria */
   getTemplateRanking() {
     generateMenu();
-    this.showMenu();
+    showMenu();
 
     if (this.students && this.students.size > 0) {
-      //alert('SI STUDENTS');
       /* We sort students descending from max number of points to min */
       let arrayFromMap = [...this.students.entries()];
       arrayFromMap.sort(function(a,b) {
-        return (b[1].finalGrade() - a[1].finalGrade());
+        return (b[1].getFinalGrade() - a[1].getFinalGrade());
       });
       this.students = new Map(arrayFromMap);
 
       saveStudents(JSON.stringify([...this.students]));
-      let TPL_GRADED_TASKS = '';
+      let scope = {};
 
       if (this.gradedTasks && this.gradedTasks.size > 0) {
-        if (this.showNumGradedTasks >= this.gradedTasks.size) {
-          this.showNumGradedTasks = this.gradedTasks.size;
-        }
-        let arrayGradedTasks = [...this.gradedTasks.entries()].reverse();
-        for (let i = 0;i < this.showNumGradedTasks;i++) {
-          if (i === (this.showNumGradedTasks - 1)) {
-            TPL_GRADED_TASKS += '<th><a href="#detailGradedTask/' + arrayGradedTasks[i][0] + '">' +
-                  arrayGradedTasks[i][1].name + '(' + arrayGradedTasks[i][1].weight + '%)&nbsp;</a><a href="#MoreGradedTasks"><button id="more_gt"><h4>+</h4></button></a></th>';
-          } else {
-            TPL_GRADED_TASKS += '<th><a href="#detailGradedTask/' + arrayGradedTasks[i][0] + '">' + arrayGradedTasks[i][1].name + '(' + arrayGradedTasks[i][1].weight + '%)</a></th>';
-          }
-        }
+        scope.TPL_GRADED_TASKS = [...this.gradedTasks.entries()].reverse();
       }
-      let scope = {};
-      scope.TPL_GRADED_TASKS = TPL_GRADED_TASKS;
+
       scope.TPL_PERSONS = arrayFromMap;
+      let TPL_XP_WEIGHT = this.weightXP;
+      let TPL_GT_WEIGHT = this.weightGP;
 
       loadTemplate('templates/rankingList.html',function(responseText) {
               let out = template(responseText,scope);
-              //console.log(out);
-              document.getElementById('content').innerHTML = eval('`' + out + '`');
+              $('#content').html(eval('`' + out + '`'));
+              if (getCookie('expandedView') === 'visible') {
+                $('.tableGradedTasks').show();
+                $('.fa-hand-o-right').addClass('fa-hand-o-down').removeClass('fa-hand-o-right');
+              }else {
+                $('.tableGradedTasks').hide();
+                $('.fa-hand-o-down').addClass('fa-hand-o-right').removeClass('fa-hand-o-down');
+              }
               let that = this;
               let callback = function() {
-                  let gtInputs = document.getElementsByClassName('gradedTaskInput');
-                  Array.prototype.forEach.call(gtInputs,function(gtInputItem) {
-                        gtInputItem.addEventListener('change', () => {
-                          let idPerson = gtInputItem.getAttribute('idStudent');
-                          let idGradedTask = gtInputItem.getAttribute('idGradedTask');
+                  $('.gradedTaskInput').each(function(index) {
+                        $(this).change(function() {
+                          let idPerson = $(this).attr('idStudent');
+                          let idGradedTask = $(this).attr('idGradedTask');
                           let gt = that.gradedTasks.get(parseInt(idGradedTask));
-                          gt.addStudentMark(idPerson,gtInputItem.value);
+                          gt.addStudentMark(idPerson,$(this).val());
                           that.getTemplateRanking();
                         });
                       });
+                  $('.profile').each(function(index) {
+                    $(this).mouseenter(function() { //TEST
+                      $(this).removeAttr('width'); //TEST
+                      $(this).removeAttr('height'); //TEST
+                    });
+                    $(this).mouseout(function() { //TEST
+                      $(this).attr('width',48); //TEST
+                      $(this).attr('height',60); //TEST
+                    });
+                  });
                 };
               callback();
             }.bind(this));
     }else {
       //alert('NO STUDENTS');
-      document.getElementById('content').innerHTML ='';
+      $('#content').html('NO STUDENTS YET');
     }
   }
-
-  /** Create a form to create a GradedTask that will be added to every student */
-  addGradedTask() {
-
+  /** Settings */
+  settings() {
+    let thisContext = this;
     let callback = function(responseText) {
-            document.getElementById('content').innerHTML = responseText;
-            let saveGradedTask = document.getElementById('newGradedTask');
-            let totalGTweight = GradedTask.getGradedTasksTotalWeight();
-            document.getElementById('labelWeight').innerHTML = 'Task Weight (0-' + (100 - totalGTweight) + '%)';
-            let weightIput = document.getElementById('idTaskWeight');
-            weightIput.setAttribute('max', 100 - totalGTweight);
+      $('#content').html(responseText);
+      let itemWeightChanger = $('#weightChanger');
+      itemWeightChanger.val(thisContext.weightXP);
+      let labelXPWeight = $('#idXPweight');
+      labelXPWeight.text(thisContext.weightXP + '% XP weight');
+      let labelGPWeight = $('#idGPweight');
+      labelGPWeight.text(thisContext.weightGP + '% GP weight');
 
-            saveGradedTask.addEventListener('submit', () => {
-              let name = document.getElementById('idTaskName').value;
-              let description = document.getElementById('idTaskDescription').value;
-              let weight = document.getElementById('idTaskWeight').value;
-              let gtask = new GradedTask(name,description,weight,[]);
-              let gtaskId = gtask.getId();
-              this.students.forEach(function(studentItem,studentKey,studentsRef) {
-                gtask.addStudentMark(studentKey,0);
-              });
-              this.gradedTasks.set(gtaskId,gtask);
-              saveGradedTasks(JSON.stringify([...this.gradedTasks]));
-              this.getTemplateRanking();
-              return false; //Avoid form submit
-            });
-          }.bind(this);
-
-    loadTemplate('templates/addGradedTask.html',callback);
-  }
-  /** Add a new person to the context app */
-  addPerson() {
-
-    let callback = function(responseText) {
-            document.getElementById('content').innerHTML = responseText;
-            let saveStudent = document.getElementById('newStudent');
-            let avatar = document.getElementById('upload');
-            //uploadAvatar(window.btoa(avatar));
-            let codeavatar = "";
-            avatar.onchange = function (avatar){
-              var fileavatar = avatar.target.files;
-              let fileReader = new FileReader();
-              fileReader.onload = function(evt){
-              codeavatar = evt.target.result;
-              };
-              fileReader.readAsDataURL(fileavatar[0]);
-            };
-
-            saveStudent.addEventListener('submit', (event) => {
-              event.preventDefault();
-              let name = document.getElementById('idFirstName').value;
-              let surnames = document.getElementById('idSurnames').value;
-              let student = new Person(name,surnames,[]);
-              this.gradedTasks.forEach(function(iGradedTask) {
-                    iGradedTask.addStudentMark(student.getId(),0);
-                  });
-              this.students.set(student.getId(),student);
-
-              var iDavatar = JSON.stringify([student.getId(), codeavatar]);
-              uploadAvatar(iDavatar);
-
-              this.getTemplateRanking();
-              return false; //Avoid form submit
-            });
-          }.bind(this);
-
-    loadTemplate('templates/addStudent.html',callback);
-  }
-  settings(){
-    let callback = function(responseText){
-      document.getElementById('content').innerHTML = responseText;
-      var slider = document.getElementById("myRange");
-      var output = document.getElementById("demo");
-      var outputg = document.getElementById("DEMO");
-      slider.value = localStorage.getItem('Actitdepoints');
-      output.innerHTML = slider.value;
-      outputg.innerHTML = 100 - parseInt(slider.value);
-      slider.oninput = function() {
-        output.innerHTML = this.value;
-        outputg.innerHTML = 100 - parseInt(this.value);
-      };
-
-      let saveSettings = document.getElementById("Settings");
-        saveSettings.addEventListener('submit', () => {
-          var output = document.getElementById("demo").innerText;
-          //var outputg = document.getElementById("DEMO").innerText;
-          console.log('ActtitudTasks'+ output);
-          localStorage.setItem('Actitdepoints',output);
-          context.getTemplateRanking();
+      itemWeightChanger.change(function() {
+          $('#idXPweight').text(itemWeightChanger.val() + '% XP weight');
+          thisContext.weightXP = itemWeightChanger.val();
+          setCookie('weightXP',thisContext.weightXP,300);
+          $('#idGPweight').text((100 - itemWeightChanger.val()) + '% GP weight');
+          thisContext.weightGP = (100 - itemWeightChanger.val());
+          setCookie('weightGP',thisContext.weightGP,300);
         });
-    };
-     
+      console.log('Settings: To implement');
+    }.bind(this);
     loadTemplate('templates/settings.html',callback);
-   
-  }
-
-  getfirststudent(){
-    let arrayFromMap = [...this.students.entries()];
-    arrayFromMap.sort(function(a,b) {
-      return (b[1].getTotalPoints() - a[1].getTotalPoints());
-    });
-    return arrayFromMap[0][1];
   }
   /** Add last action performed to lower information layer in main app */
-  notify(text) {
-    document.getElementById('notify').innerHTML = text;
+  notify(text,title) {
+    toastr.options.timeOut = 4500;
+    toastr.options.hideDuration = 250;
+    toastr.options.showDuration = 250;
+    toastr.success(text, title);   
   }
 }
-
 export let context = new Context(); //Singleton export

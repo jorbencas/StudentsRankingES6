@@ -4,22 +4,36 @@
   "description": "Proves de transpilacio amb babel",
   "main": "main.js",
   "scripts": {
-    "test": "test"
+    "test": "karma start --single-run --browsers ChromeHeadless karma.conf.js",
+    "start": "forever start src/server/app.js",
+    "stop": "forever stop src/server/app.js",
+    "restart": "forever restart src/server/app.js",
+    "postinstall": "./node_modules/.bin/frontend-dependencies && node_modules/gulp/bin/gulp.js browserify"
   },
   "author": "Pere Crespo",
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.8.2",
+    "bootstrap": "^4.0.0-beta.2",
+    "child_process": "^1.0.2",
     "express": "^4.9.3",
     "express-force-ssl": "^0.3.2",
-    "morgan": "^1.1.1",
-    "serve-favicon": "^2.0.1",
     "express-session": "*",
+    "font-awesome": "^4.7.0",
+    "forever": "^0.15.3",
+    "formidable": "^1.1.1",
+    "fs": "0.0.1-security",
+    "github-webhook-handler": "^0.7.0",
+    "jquery": "^3.2.1",
+    "morgan": "^1.1.1",
     "passport": "*",
+    "passport-facebook": "~2.1.1",
+    "passport-google-oauth": "1.0.0",
     "passport-local": "*",
     "passport-twitter": "~1.0.4",
-    "passport-facebook": "~2.1.1",
-    "passport-google-oauth": "1.0.0"
+    "popper.js": "^1.12.9",
+    "serve-favicon": "^2.0.1",
+    "toastr": "^2.1.2"
   },
   "devDependencies": {
     "babel-core": "^6.26.0",
@@ -27,7 +41,7 @@
     "babelify": "^7.3.0",
     "browser-sync": "^2.18.13",
     "browserify": "^14.4.0",
-    "fs": "0.0.1-security",
+    "frontend-dependencies": "^0.2.1",
     "gulp": "^3.9.1",
     "gulp-babel": "^7.0.0",
     "gulp-browserify": "^0.5.1",
@@ -35,9 +49,26 @@
     "gulp-jsdoc3": "^1.0.1",
     "gulp-jshint": "^2.0.4",
     "gulp-load-plugins": "^1.5.0",
-    "gulp-nodemon": "^2.2.1",    
+    "gulp-nodemon": "^2.2.1",
+    "jasmine-core": "2.5.2",
     "jsdoc": "^3.5.5",
     "jshint": "^2.9.5",
-    "jshint-stylish": "^2.2.1"
+    "jshint-stylish": "^2.2.1",
+    "karma": "^1.7.1",
+    "mkdirp": "^0.5.1",
+    "protractor": "^5.2.0"
+  },
+  "frontendDependencies": {
+    "target": "lib",
+    "packages": [
+      "jquery/dist/jquery.min.js",
+      "bootstrap/dist/css/bootstrap.min.css",
+      "bootstrap/dist/css/bootstrap.min.css.map",
+      "bootstrap/dist/js/bootstrap.min.js",
+      "popper.js/dist/umd/popper.min.js",
+      "toastr/build/toastr.min.css",
+      "toastr/build/toastr.min.js",
+      "font-awesome"
+    ]
   }
 }
